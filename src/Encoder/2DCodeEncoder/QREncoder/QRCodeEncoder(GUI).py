@@ -1,13 +1,36 @@
 #Author: Stan Yin
 #GitHub Name: SomeB1oody
 #This project is based on CC 4.0 BY, please mention my name if you use it.
-#This project requires opencv, PIL, qrcode, numpy, base64 and wxWidgets.
+#This project requires opencv, PIL, qrcode, numpy, re, base64 and wxWidgets.
 import wx
 import qrcode
 import base64
 from PIL import Image
 import numpy as np
+import re
 import cv2
+
+def is_valid_windows_filename(filename: str) -> bool:
+    # 检查是否包含非法字符
+    invalid_chars = r'[<>:"/\\|?*]'
+    if re.search(invalid_chars, filename):
+        return False
+    # 检查是否是保留名称
+    reserved_names = [
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+    ]
+    if filename.upper() in reserved_names:
+        return False
+    # 检查是否以空格或点结尾
+    if filename.endswith(' ') or filename.endswith('.'):
+        return False
+    # 检查文件名长度
+    if len(filename) > 255:
+        return False
+    # 如果所有检查都通过，返回 True
+    return True
 
 # 读取文件并进行base64编码
 def file_to_base64(filepath):
@@ -303,6 +326,9 @@ class QREncoderWX(wx.Frame):
         if not output_path:
             wx.MessageBox('Output path cannot be empty', 'Error', wx.OK | wx.ICON_ERROR)
             return
+        if not is_valid_windows_filename(output_name):
+            wx.MessageBox('Output name invalid, try another one', 'Error', wx.OK | wx.ICON_ERROR)
+            return
         if not output_name:
             wx.MessageBox('Output name cannot be empty', 'Error', wx.OK | wx.ICON_ERROR)
             return
@@ -322,7 +348,6 @@ class QREncoderWX(wx.Frame):
         except Exception as e:
             wx.MessageBox(str(e), 'Error', wx.OK | wx.ICON_ERROR)
             return
-
 
 
 if __name__ == "__main__":
