@@ -171,9 +171,12 @@ class QREncoderWX(wx.Frame):
             self.file_button.Enable(False)
             self.input_path_text.SetLabel("Select \"file\" to enable button")
             self.text_input.Enable(True)
+            self.encode_mode.Enable(True)
         else:
             self.text_input.Enable(False)
             self.file_button.Enable(True)
+            self.encode_mode.Enable(False)
+            self.encode_mode.SetSelection(1)
 
     def on_select_file(self, event):
         with wx.FileDialog(None, "Select a image", wildcard="所有文件 (*.*)|*.*",
