@@ -64,13 +64,12 @@ def generate_qr_code(data, error_correction, size, border):
     qr.add_data(data)
     qr.make(fit=True)
 
-    img = qr.make_image(fill='black', back_color='white').convert('RGB')  # Convert to RGB
+    img = qr.make_image(fill='black', back_color='white')
     img = img.resize((size, size), Image.LANCZOS)
     img.save("qrcode_custom_size.png")
 
     return img
 
-# Example usage
 if __name__ == "__main__":
     while True:
         user_data = input("Please enter input data: ")
