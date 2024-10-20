@@ -33,9 +33,9 @@ def calculate_min_size(data, error_correction, border=4):
     qr.add_data(data)
     qr.make(fit=True)
     version = qr.version
-    return (version * 4 + 17 + 2 * border)
+    return version * 4 + 17 + 2 * border
 
-def generate_qr_code(data, error_correction, size=400, border=4):
+def generate_qr_code(data, error_correction, encode_mode, size=400, border=4):
     min_size = calculate_min_size(data, error_correction, border)
 
     if size < min_size:
@@ -50,7 +50,7 @@ def generate_qr_code(data, error_correction, size=400, border=4):
         border=border,
     )
 
-    qr.add_data(data)
+    qr.add_data(data.encode(encode_mode))
     qr.make(fit=True)
 
     img = qr.make_image(fill='black', back_color='white')
@@ -89,6 +89,7 @@ class QREncoderWX(wx.Frame):
         )
         self.hbox.Add(self.input_path_text, flag=wx.ALL, border=5)
         self.vbox.Add(self.hbox, flag=wx.EXPAND)
+        self.file_button.Enable(False)
 
         # 输入文本
         self.vbox.Add(wx.StaticText(panel, label=
@@ -96,6 +97,16 @@ class QREncoderWX(wx.Frame):
         self.text_input = wx.TextCtrl(panel)
         self.Bind(wx.EVT_TEXT, self.get_available_error_correction_options, self.text_input)
         self.vbox.Add(self.text_input, flag=wx.EXPAND | wx.ALL, border=5)
+
+        # 解码格式单选框
+        self.encode_mode = wx.RadioBox(
+            panel, label="Choose encode mode:", choices=[
+                'utf-8', 'base64', 'iso-8859-1(Latin-1)', 'ascii', 'Shift JIS5 (Japanese)', 'GB2312', 'GBK', 'GB18030'
+            ],
+            majorDimension=5,  # 每列5个选项
+            style=wx.RA_SPECIFY_COLS  # 指定为按列排列
+        )
+        self.vbox.Add(self.encode_mode, flag=wx.ALL, border=5)
 
         # 选择容错率
         self.F_rate_choice = ['Low(7%)', 'Medium(15%)', 'Quartile(25%)', 'High(30%)']
@@ -208,12 +219,24 @@ class QREncoderWX(wx.Frame):
         else:
             input_ = file_to_base64(self.selected_file)
 
+        encode_mode = self.encode_mode.GetStringSelection()
+        match encode_mode:
+            case 'utf-8': encode_mode = 'utf-8'
+            case 'base64': encode_mode = 'base64'
+            case 'iso-8859-1(Latin-1)': encode_mode = 'iso-8859-1'
+            case 'ascii': encode_mode = 'ascii'
+            case 'Shift JIS5 (Japanese)': encode_mode = 'Shift JIS5'
+            case 'GB2312': encode_mode = 'gb2312'
+            case 'GBK': encode_mode = 'gbk'
+            case 'GB18030': encode_mode = 'gb18030'
+            case _: encode_mode = 'utf-8'
+
         if not input_:
             wx.MessageBox('Input data cannot be empty', 'Error', wx.OK | wx.ICON_ERROR)
             return
 
         F_rate = self.F_rate.GetStringSelection()
-        img = generate_qr_code(input_, F_rate)
+        img = generate_qr_code(input_, F_rate, encode_mode)
 
         cv_img = pil_to_opencv_gray(img)
         cv2.imshow("Code", cv_img)
@@ -253,6 +276,17 @@ class QREncoderWX(wx.Frame):
         output_name = self.output_name.GetValue()
         output_format = self.output_format.GetStringSelection()
         F_rate = self.F_rate.GetStringSelection()
+        encode_mode = self.encode_mode.GetStringSelection()
+        match encode_mode:
+            case 'utf-8': encode_mode = 'utf-8'
+            case 'base64': encode_mode = 'base64'
+            case 'iso-8859-1(Latin-1)': encode_mode = 'iso-8859-1'
+            case 'ascii': encode_mode = 'ascii'
+            case 'Shift JIS5 (Japanese)': encode_mode = 'Shift JIS5'
+            case 'GB2312': encode_mode = 'gb2312'
+            case 'GBK': encode_mode = 'gbk'
+            case 'GB18030': encode_mode = 'gb18030'
+            case _: encode_mode = 'utf-8'
 
         if not input_:
             wx.MessageBox('Input data cannot be empty', 'Error', wx.OK | wx.ICON_ERROR)
@@ -273,7 +307,7 @@ class QREncoderWX(wx.Frame):
         path = f'{output_path}/{output_name}{output_format}'
 
         try:
-            img = generate_qr_code(input_, F_rate, int(size), int(broader))
+            img = generate_qr_code(input_, F_rate, encode_mode, int(size), int(broader))
         except ValueError as e:
             wx.MessageBox(str(e), 'Error', wx.OK | wx.ICON_ERROR)
             return
@@ -292,6 +326,6 @@ if __name__ == "__main__":
     app = wx.App()
     frame = QREncoderWX(None)
     frame.SetTitle('QR Encoder with GUI')
-    frame.SetSize((800, 700))
+    frame.SetSize((750, 725))
     frame.Show()
     app.MainLoop()
