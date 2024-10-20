@@ -176,13 +176,13 @@ class QREncoderWX(wx.Frame):
                     return
 
             self.F_rate_choice = []
-            if data_length <= 2214:
+            if data_length <= 2953:
                 self.F_rate_choice.append('Low(7%)')
-            if data_length <= 1748:
+            if data_length <= 2231:
                 self.F_rate_choice.append('Medium(15%)')
-            if data_length <= 1247:
+            if data_length <= 1663:
                 self.F_rate_choice.append('Quartile(25%)')
-            if data_length <= 954:
+            if data_length <= 1273:
                 self.F_rate_choice.append('High(30%)')
 
     def get_available_error_correction_options(self, event):
