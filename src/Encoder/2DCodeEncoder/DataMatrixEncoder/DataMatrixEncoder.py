@@ -2,7 +2,7 @@ from pylibdmtx.pylibdmtx import encode
 from PIL import Image
 import re
 
-MAX_CAPACITY = 2335  # 适用于 ASCII 编码
+MAX_CAPACITY = 1556
 
 def is_valid_windows_filename(filename: str) -> bool:
     # 检查是否包含非法字符
