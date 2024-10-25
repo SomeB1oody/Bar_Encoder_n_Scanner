@@ -4,7 +4,7 @@ import re
 import base64
 import wx
 
-MAX_LENGTH = 1556
+MAX_LENGTH = 1558
 
 def is_valid_windows_filename(filename: str) -> bool:
     # 检查是否包含非法字符
@@ -66,7 +66,7 @@ class DataMatrixEncoderWX(wx.Frame):
         # 选择文件输入还是字符输入
         self.text_or_file = wx.RadioBox(
             panel, label="Choose input type", choices=[
-                'text', 'file(Max: 2,214 bytes)'
+                'text', 'file(Max: 1,558 bytes)'
             ]
         )
         self.Bind(wx.EVT_RADIOBOX, self.input_type, self.text_or_file)
