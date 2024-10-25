@@ -42,10 +42,6 @@ if __name__ == '__main__':
             if not user_input:
                 print("Input cannot be empty! Please try again.")
                 continue
-            if len(user_input) > MAX_CAPACITY:
-                print("Input is too large! Please try again.")
-                continue
-            break
 
         # 获取编码模式
         while True:
@@ -54,6 +50,31 @@ if __name__ == '__main__':
                 break
             else:
                 print("Invalid encoding mode. Please try again.")
+
+        match encode_mode:
+            case "utf-8":
+                data = user_input.encode(
+                    'utf-8', errors='ignore').decode('utf-8', errors='ignore')
+            case "ascii":
+                data = user_input.encode(
+                    'ascii', errors='ignore').decode('ascii', errors='ignore')
+            case "latin1":
+                data = user_input.encode(
+                    'iso-8859-1', errors='ignore').decode('iso-8859-1', errors='ignore')
+            case "gbk":
+                data = user_input.encode(
+                    'gbk', errors='ignore').decode('gbk', errors='ignore')
+            case "shift_jis":
+                data = user_input.encode(
+                    'shift_jis', errors='ignore').decode('shift_jis', errors='ignore')
+            case _:
+                data = user_input.encode(
+                    'utf-8', errors='ignore').decode('utf-8', errors='ignore')
+
+        data_length = len(data)
+        if data_length > MAX_CAPACITY:
+            print("Input is too large! Please try again.")
+            continue
 
         try:
             img = generate_datamatrix(user_input, encode_mode)
