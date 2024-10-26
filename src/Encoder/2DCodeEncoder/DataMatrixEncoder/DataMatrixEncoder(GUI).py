@@ -4,7 +4,32 @@ import re
 import base64
 import wx
 
-MAX_LENGTH = 1558
+MAX_LENGTH = 1556
+
+def input_process(input_, encode_mode):
+    match encode_mode:
+        case 'utf-8':
+            data = input_.encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
+        case 'base64':
+            with open(input_, "rb") as file:
+                encoded = base64.b64encode(file.read())
+                data = encoded.decode('utf-8')
+        case 'iso-8859-1(Latin-1)':
+            data = input_.encode('iso-8859-1', errors='ignore').decode('iso-8859-1', errors='ignore')
+        case 'ascii':
+            data = input_.encode('ascii', errors='ignore').decode('ascii', errors='ignore')
+        case 'Shift JIS5 (Japanese)':
+            data = input_.encode('shift_jis5', errors='ignore').decode('shift_jis5', errors='ignore')
+        case 'GB2312':
+            data = input_.encode('gb2312', errors='ignore').decode('gb2312', errors='ignore')
+        case 'GBK':
+            data = input_.encode('gbk', errors='ignore').decode('gbk', errors='ignore')
+        case 'GB18030':
+            data = input_.encode('gb18030', errors='ignore').decode('gb18030', errors='ignore')
+        case _:
+            data = input_.encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
+
+    return data
 
 def is_valid_windows_filename(filename: str) -> bool:
     # 检查是否包含非法字符
@@ -28,15 +53,9 @@ def is_valid_windows_filename(filename: str) -> bool:
     # 如果所有检查都通过，返回 True
     return True
 
-# 读取文件并进行base64编码
-def file_to_base64(filepath):
-    with open(filepath, "rb") as file:
-        encoded = base64.b64encode(file.read())
-        return encoded.decode('utf-8')
-
-def generate_datamatrix(data, encode_mode, size = 300):
+def generate_datamatrix(data, size = 300):
     # 生成Data Matrix条码
-    encoded = encode(data.encode(encode_mode))
+    encoded = encode(data.encode())
 
     # 获取条码的原始宽度和高度
     width, height = encoded.width, encoded.height
@@ -78,8 +97,7 @@ class DataMatrixEncoderWX(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_select_file, self.file_button)
         self.hbox.Add(self.file_button,flag=wx.ALL, border=5)
         self.input_path_text = wx.StaticText(panel, label=
-        "Click \"Select file\" first"
-                                             )
+        "Click \"Select file\" first")
         self.hbox.Add(self.input_path_text, flag=wx.ALL, border=5)
         self.vbox.Add(self.hbox, flag=wx.EXPAND)
         self.file_button.Enable(False)
@@ -165,13 +183,16 @@ class DataMatrixEncoderWX(wx.Frame):
             if dialog.ShowModal() == wx.ID_OK:
                 self.input_path_text.SetLabel(f"{dialog.GetPath()}")
                 self.selected_file = dialog.GetPath()
-                data_length = len(file_to_base64(self.selected_file))
+                data_length = len(input_process(self.selected_file, self.encode_mode.GetStringSelection()))
                 if data_length > MAX_LENGTH:
                     wx.MessageBox('Input data too big', 'Error', wx.OK | wx.ICON_ERROR)
                     return
+            else:
+                wx.MessageBox('Cannot load file', 'Error', wx.OK | wx.ICON_ERROR)
+                return
 
     def on_text_input(self, event):
-        if len(self.text_input.GetValue()) > MAX_LENGTH:
+        if len(input_process(self.text_input.GetValue(), self.encode_mode.GetStringSelection())) > MAX_LENGTH:
             wx.MessageBox('Input data too big', 'Error', wx.OK | wx.ICON_ERROR)
             return
 
@@ -180,25 +201,17 @@ class DataMatrixEncoderWX(wx.Frame):
         if input_type == 'text':
             input_data = self.text_input.GetValue()
         else:
-            input_data = file_to_base64(self.selected_file)
+            input_data = self.selected_file
 
         encode_mode = self.encode_mode.GetSelection()
-        match encode_mode:
-            case 'utf-8': encode_mode = 'utf-8'
-            case 'base64': encode_mode = 'utf-8'
-            case 'iso-8859-1(Latin-1)': encode_mode = 'iso-8859-1'
-            case 'ascii': encode_mode = 'ascii'
-            case 'Shift JIS5 (Japanese)': encode_mode = 'Shift JIS5'
-            case 'GB2312': encode_mode = 'gb2312'
-            case 'GBK': encode_mode = 'gbk'
-            case 'GB18030': encode_mode = 'gb18030'
-            case _: encode_mode = 'utf-8'
+
+        input_data = input_process(input_data, encode_mode)
 
         if not input_data:
             wx.MessageBox('Input data cannot be empty', 'Error', wx.OK | wx.ICON_ERROR)
             return
 
-        img = generate_datamatrix(input_data, encode_mode)
+        img = generate_datamatrix(input_data)
         img.show()
 
     def input_check_size(self, event):
@@ -221,23 +234,13 @@ class DataMatrixEncoderWX(wx.Frame):
         if input_type == 'text':
             input_ = self.text_input.GetValue()
         else:
-            input_ = file_to_base64(self.selected_file)
+            input_ = self.selected_file
         size = self.img_size.GetValue()
         output_path = self.selected_folder
         output_name = self.output_name.GetValue()
         output_format = self.output_format.GetStringSelection()
-        encode_mode = self.encode_mode.GetSelection()
 
-        match encode_mode:
-            case 'utf-8': encode_mode = 'utf-8'
-            case 'base64': encode_mode = 'utf-8'
-            case 'iso-8859-1(Latin-1)': encode_mode = 'iso-8859-1'
-            case 'ascii': encode_mode = 'ascii'
-            case 'Shift JIS5 (Japanese)': encode_mode = 'Shift JIS5'
-            case 'GB2312': encode_mode = 'gb2312'
-            case 'GBK': encode_mode = 'gbk'
-            case 'GB18030': encode_mode = 'gb18030'
-            case _: encode_mode = 'utf-8'
+        input_ = input_process(input_, self.encode_mode.GetStringSelection())
 
         if not input_:
             wx.MessageBox('Input data cannot be empty', 'Error', wx.OK | wx.ICON_ERROR)
@@ -258,7 +261,7 @@ class DataMatrixEncoderWX(wx.Frame):
         path = f'{output_path}/{output_name}{output_format}'
 
         try:
-            img = generate_datamatrix(input_, encode_mode, int(size))
+            img = generate_datamatrix(input_, int(size))
             img.save(path)
             wx.MessageBox(f'Image saved at{path}', 'Success', wx.OK | wx.ICON_INFORMATION)
         except Exception as e:
