@@ -10,6 +10,31 @@ import numpy as np
 import re
 import cv2
 
+def input_process(input_, encode_mode):
+    match encode_mode:
+        case 'utf-8':
+            data = input_.encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
+        case 'base64':
+            with open(input_, "rb") as file:
+                encoded = base64.b64encode(file.read())
+                data = encoded.decode('utf-8')
+        case 'iso-8859-1(Latin-1)':
+            data = input_.encode('iso-8859-1', errors='ignore').decode('iso-8859-1', errors='ignore')
+        case 'ascii':
+            data = input_.encode('ascii', errors='ignore').decode('ascii', errors='ignore')
+        case 'Shift JIS5 (Japanese)':
+            data = input_.encode('shift_jis5', errors='ignore').decode('shift_jis5', errors='ignore')
+        case 'GB2312':
+            data = input_.encode('gb2312', errors='ignore').decode('gb2312', errors='ignore')
+        case 'GBK':
+            data = input_.encode('gbk', errors='ignore').decode('gbk', errors='ignore')
+        case 'GB18030':
+            data = input_.encode('gb18030', errors='ignore').decode('gb18030', errors='ignore')
+        case _:
+            data = input_.encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
+
+    return data
+
 def is_valid_windows_filename(filename: str) -> bool:
     # 检查是否包含非法字符
     invalid_chars = r'[<>:"/\\|?*]'
@@ -32,12 +57,6 @@ def is_valid_windows_filename(filename: str) -> bool:
     # 如果所有检查都通过，返回 True
     return True
 
-# 读取文件并进行base64编码
-def file_to_base64(filepath):
-    with open(filepath, "rb") as file:
-        encoded = base64.b64encode(file.read())
-        return encoded.decode('utf-8')
-
 def get_error_correction_level(level):
     match level:
         case 'Low(7%)': return qrcode.constants.ERROR_CORRECT_L
@@ -58,7 +77,7 @@ def calculate_min_size(data, error_correction, border=4):
     version = qr.version
     return version * 4 + 17 + 2 * border
 
-def generate_qr_code(data, error_correction, encode_mode, size=400, border=4):
+def generate_qr_code(data, error_correction, size=400, border=4):
     min_size = calculate_min_size(data, error_correction, border)
 
     if size < min_size:
@@ -73,7 +92,7 @@ def generate_qr_code(data, error_correction, encode_mode, size=400, border=4):
         border=border,
     )
 
-    qr.add_data(data.encode(encode_mode))
+    qr.add_data(data.encode())
     qr.make(fit=True)
 
     img = qr.make_image(fill='black', back_color='white')
@@ -93,7 +112,7 @@ class QREncoderWX(wx.Frame):
         panel = wx.Panel(self)
         self.vbox = wx.BoxSizer(wx.VERTICAL)
 
-        # 输出格式单选框
+        # 选择文件输入还是字符输入
         self.text_or_file = wx.RadioBox(
             panel, label="Choose input type", choices=[
                 'text', 'file(Max: 2,214 bytes)'
@@ -121,7 +140,7 @@ class QREncoderWX(wx.Frame):
         self.Bind(wx.EVT_TEXT, self.get_available_error_correction_options, self.text_input)
         self.vbox.Add(self.text_input, flag=wx.EXPAND | wx.ALL, border=5)
 
-        # 解码格式单选框
+        # 编码格式单选框
         self.encode_mode = wx.RadioBox(
             panel, label="Choose encode mode:", choices=[
                 'utf-8', 'base64', 'iso-8859-1(Latin-1)', 'ascii', 'Shift JIS5 (Japanese)', 'GB2312', 'GBK', 'GB18030'
@@ -202,12 +221,12 @@ class QREncoderWX(wx.Frame):
             self.encode_mode.SetSelection(1)
 
     def on_select_file(self, event):
-        with wx.FileDialog(None, "Select a image", wildcard="所有文件 (*.*)|*.*",
+        with wx.FileDialog(None, "Select a file", wildcard="所有文件 (*.*)|*.*",
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as dialog:
             if dialog.ShowModal() == wx.ID_OK:
                 self.input_path_text.SetLabel(f"{dialog.GetPath()}")
                 self.selected_file = dialog.GetPath()
-                data_length = len(file_to_base64(self.selected_file))
+                data_length = len(input_process(self.selected_file, self.encode_mode.GetStringSelection()))
                 if data_length > 2953:
                     wx.MessageBox('Input data too big', 'Error', wx.OK | wx.ICON_ERROR)
                     return
@@ -223,7 +242,7 @@ class QREncoderWX(wx.Frame):
                 self.F_rate_choice.append('High(30%)')
 
     def get_available_error_correction_options(self, event):
-        data_length = len(self.text_input.GetValue())
+        data_length = len(input_process(self.text_input.GetValue(), self.encode_mode.GetStringSelection()))
         if data_length > 2953:
             wx.MessageBox('Input data too big', 'Error', wx.OK | wx.ICON_ERROR)
             return
@@ -240,22 +259,12 @@ class QREncoderWX(wx.Frame):
 
     def on_generate_button(self, event):
         input_type = self.text_or_file.GetStringSelection()
-        if input_type == 'text':
-            input_ = self.text_input.GetValue()
-        else:
-            input_ = file_to_base64(self.selected_file)
-
         encode_mode = self.encode_mode.GetStringSelection()
-        match encode_mode:
-            case 'utf-8': encode_mode = 'utf-8'
-            case 'base64': encode_mode = 'base64'
-            case 'iso-8859-1(Latin-1)': encode_mode = 'iso-8859-1'
-            case 'ascii': encode_mode = 'ascii'
-            case 'Shift JIS5 (Japanese)': encode_mode = 'Shift JIS5'
-            case 'GB2312': encode_mode = 'gb2312'
-            case 'GBK': encode_mode = 'gbk'
-            case 'GB18030': encode_mode = 'gb18030'
-            case _: encode_mode = 'utf-8'
+        if input_type == 'text':
+            input_ = input_process(self.text_input.GetValue(), encode_mode)
+        else:
+            input_ = input_process(self.selected_file, encode_mode)
+
 
         if not input_:
             wx.MessageBox('Input data cannot be empty', 'Error', wx.OK | wx.ICON_ERROR)
@@ -292,27 +301,17 @@ class QREncoderWX(wx.Frame):
 
     def on_save_button(self, event):
         input_type = self.text_or_file.GetStringSelection()
+        encode_mode = self.encode_mode.GetStringSelection()
         if input_type == 'text':
-            input_ = self.text_input.GetValue()
+            input_ = input_process(self.text_input.GetValue(), encode_mode)
         else:
-            input_ = file_to_base64(self.selected_file)
+            input_ = input_process(self.selected_file, encode_mode)
         size = self.img_size.GetValue()
         broader = self.broader_size.GetValue()
         output_path = self.selected_folder
         output_name = self.output_name.GetValue()
         output_format = self.output_format.GetStringSelection()
         F_rate = self.F_rate.GetStringSelection()
-        encode_mode = self.encode_mode.GetStringSelection()
-        match encode_mode:
-            case 'utf-8': encode_mode = 'utf-8'
-            case 'base64': encode_mode = 'base64'
-            case 'iso-8859-1(Latin-1)': encode_mode = 'iso-8859-1'
-            case 'ascii': encode_mode = 'ascii'
-            case 'Shift JIS5 (Japanese)': encode_mode = 'Shift JIS5'
-            case 'GB2312': encode_mode = 'gb2312'
-            case 'GBK': encode_mode = 'gbk'
-            case 'GB18030': encode_mode = 'gb18030'
-            case _: encode_mode = 'utf-8'
 
         if not input_:
             wx.MessageBox('Input data cannot be empty', 'Error', wx.OK | wx.ICON_ERROR)
@@ -336,7 +335,7 @@ class QREncoderWX(wx.Frame):
         path = f'{output_path}/{output_name}{output_format}'
 
         try:
-            img = generate_qr_code(input_, F_rate, encode_mode, int(size), int(broader))
+            img = generate_qr_code(input_, F_rate, int(size), int(broader))
         except ValueError as e:
             wx.MessageBox(str(e), 'Error', wx.OK | wx.ICON_ERROR)
             return
