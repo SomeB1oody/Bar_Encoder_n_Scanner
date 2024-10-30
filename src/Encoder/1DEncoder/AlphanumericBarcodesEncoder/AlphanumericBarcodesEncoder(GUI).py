@@ -67,7 +67,7 @@ class AlphanumericBarcodesEncoderWX(wx.Frame):
         panel = wx.Panel(self)
         self.vbox = wx.BoxSizer(wx.VERTICAL)
 
-        # 选择文件输入还是字符输入
+        # 选择格式
         self.code39_or_128 = wx.RadioBox(
             panel, label="Choose input type", choices=[
                 'Code39', 'Code128'
