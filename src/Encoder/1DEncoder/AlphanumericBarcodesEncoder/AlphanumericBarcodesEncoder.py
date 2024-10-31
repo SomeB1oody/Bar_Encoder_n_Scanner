@@ -20,36 +20,36 @@ def validate_input(data, barcode_format):
 def generate_barcode(data, barcode_format, filename='barcode'):
     # 检查选择的条形码格式是否受支持
     if barcode_format.lower() not in SUPPORTED_FORMATS:
-        print(f"不支持的条形码格式: {barcode_format}. 请选择 'Code39' 或 'Code128'.")
+        print(f"Invalid barcode type: {barcode_format}. Please choose 'Code39' or 'Code128'.")
         return
 
     # 验证输入数据
     if not validate_input(data, barcode_format.lower()):
-        print("输入内容无效，请检查格式要求。")
+        print("Invalid input")
         return
 
     # 创建条形码对象并生成图像
     barcode_class = barcode.get_barcode_class(barcode_format)
     barcode_obj = barcode_class(data, writer=ImageWriter())
     barcode_obj.save(filename)
-    print(f"条形码已生成并保存为 '{filename}.png'")
+    print(f"Barcode saved as '{filename}.png'")
 
 if __name__ == '__main__':
     while True:
         # 获取用户输入
-        data = input("请输入要生成条形码的内容 (输入 'exit' 退出): ")
+        data = input("Please enter data (Enter 'exit' to exit): ")
         if data.lower() == 'exit':
-            print("程序已退出。")
+            print("Bye")
             break
 
-        barcode_format = input("请选择条形码格式 (Code39, Code128): ")
+        barcode_format = input("Please choose barcode format (Code39, Code128): ")
 
         # 生成条形码并命名文件
-        filename = input("请输入保存条形码的文件名（无需扩展名）: ")
+        filename = input("Enter filename(no suffix): ")
         generate_barcode(data, barcode_format, filename)
 
         # 提示是否继续生成
-        continue_choice = input("是否继续生成条形码？(y/n): ").strip().lower()
+        continue_choice = input("If continue generating (y/n): ").strip().lower()
         if continue_choice != 'y':
-            print("程序已退出。")
+            print("Bye")
             break
