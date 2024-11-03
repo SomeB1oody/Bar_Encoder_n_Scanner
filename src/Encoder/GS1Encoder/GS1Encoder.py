@@ -26,7 +26,7 @@ def generate_barcode(gtin, barcode_format):
     barcode_class = barcode.get_barcode_class(barcode_format)
     barcode_obj = barcode_class(gtin, writer=ImageWriter())
     filename = barcode_obj.save(f"{barcode_format}_Barcode_{gtin}")
-    print(f"{barcode_format}条形码已生成并保存为：{filename}.png")
+    print(f"{barcode_format}Barcode saved as {filename}.png")
 
 def generate_qr_code(data):
     # 生成QR码并保存为PNG文件。
@@ -41,7 +41,7 @@ def generate_qr_code(data):
     img = qr.make_image(fill="black", back_color="white")
     filename = f"QRCode_{data}.png"
     img.save(filename)
-    print(f"QR码已生成并保存为：{filename}")
+    print(f"QR code saved as{filename}")
 
 def generate_data_matrix(data):
     # 生成Data Matrix码并保存为PNG文件。
@@ -49,25 +49,25 @@ def generate_data_matrix(data):
     img = Image.frombytes('RGB', (encoded.width, encoded.height), encoded.pixels)
     filename = f"DataMatrix_{data}.png"
     img.save(filename)
-    print(f"Data Matrix码已生成并保存为：{filename}")
+    print(f"Data Matrix saved as {filename}")
 
 if __name__ == '__main__':
     while True:
-        user_input = input("请输入一个12位数字生成条码或二维码 (输入'退出'以结束)：")
+        user_input = input("Please enter a 12-digit number to generate (enter 'Exit' to end):")
         if user_input.lower() == '退出':
             break
         elif len(user_input) == 12 and user_input.isdigit():
             gtin = generate_gtin(user_input)
-            print(f"生成的GTIN-13编码为：{gtin}")
+            print(f"GTIN-13: {gtin}")
 
-            print("请选择生成类型：")
-            print("1. EAN-13条形码")
-            print("2. UPC-A条形码")
-            print("3. Code128条形码")
-            print("4. QR码")
-            print("5. Data Matrix码")
+            print("Choose a type:")
+            print("1. EAN-13")
+            print("2. UPC-A")
+            print("3. Code128")
+            print("4. QR")
+            print("5. Data Matrix")
 
-            choice = input("请输入选项编号 (1, 2, 3, 4, 5)：")
+            choice = input("Enter number (1, 2, 3, 4, 5)：")
             if choice == '1':
                 generate_barcode(gtin, 'ean13')
             elif choice == '2':
@@ -79,6 +79,6 @@ if __name__ == '__main__':
             elif choice == '5':
                 generate_data_matrix(gtin)  # 使用GTIN生成Data Matrix码
             else:
-                print("无效的选择，请选择1、2、3、4或5。")
+                print("Invalid type")
         else:
-            print("无效的输入，请输入12位数字。")
+            print("Invalid input, please enter 12 digits")
