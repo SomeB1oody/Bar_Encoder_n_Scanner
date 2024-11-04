@@ -54,7 +54,7 @@ def generate_data_matrix(data):
 if __name__ == '__main__':
     while True:
         user_input = input("Please enter a 12-digit number to generate (enter 'Exit' to end):")
-        if user_input.lower() == '退出':
+        if user_input.lower() == 'exit':
             break
         elif len(user_input) == 12 and user_input.isdigit():
             gtin = generate_gtin(user_input)
