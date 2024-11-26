@@ -95,15 +95,6 @@ class AlphanumericBarcodesEncoderWX(wx.Frame):
         self.hbox2.Add(self.output_path_text, flag=wx.ALL, border=5)
         self.vbox.Add(self.hbox2, flag=wx.EXPAND)
 
-        # 输出格式单选框
-        self.output_format = wx.RadioBox(
-            panel, label="Choose output format:", choices=[
-                '.jpg', '.jpeg', '.png', '.tiff',
-                '.tif', '.bmp', '.ppm', '.pgm', '.pbm', '.webp'
-            ]
-        )
-        self.vbox.Add(self.output_format, flag=wx.ALL, border=5)
-
         # 输出名称
         self.vbox.Add(wx.StaticText(panel, label=
         "Output image name:(no file suffix)"), flag=wx.ALL, border=5)
@@ -147,7 +138,6 @@ class AlphanumericBarcodesEncoderWX(wx.Frame):
         code39_or_128 = self.code39_or_128.GetStringSelection().lower()
         text_input = self.text_input.GetValue()
         selected_folder = self.selected_folder
-        output_format = self.output_format.GetStringSelection()
         output_name = self.output_name.GetValue()
 
         if not text_input:
@@ -160,7 +150,7 @@ class AlphanumericBarcodesEncoderWX(wx.Frame):
             wx.MessageBox('Invalid filename', 'Error', wx.OK | wx.ICON_ERROR)
             return
 
-        path = f'{selected_folder}/{output_name}.{output_format}'
+        path = f'{selected_folder}/{output_name}'
 
         barcode_ = generate_barcode(text_input, code39_or_128)
 
