@@ -121,6 +121,8 @@ class GS1Encoder(wx.Frame):
                 '.tif', '.bmp', '.ppm', '.pgm', '.pbm', '.webp'
             ]
         )
+        self.output_format.Enable(False)
+        self.output_format.SetSelection(2)
         self.vbox.Add(self.output_format, flag=wx.ALL, border=5)
 
         # 输出名称
@@ -142,8 +144,10 @@ class GS1Encoder(wx.Frame):
         selected_dimension = self.dimension.GetStringSelection()
         if selected_dimension == '1D':
             self.type_choice = ['EAN13', 'UPCA','Code128']
+            self.output_format.Enable(False)
         else:
             self.type_choice = ['QR Code', 'DataMatrix']
+            self.output_format.Enable(True)
         self.process_type.Set(self.type_choice)
 
     def on_select_folder(self, event):
@@ -203,16 +207,16 @@ class GS1Encoder(wx.Frame):
             wx.MessageBox('Output name is invalid', 'Error', wx.OK | wx.ICON_ERROR)
             return
 
-        path = f'{output_path}/{output_name}{selected_format}'
-
         if len(input_text) == 12 and input_text.isdigit():
             gtin = generate_gtin(input_text)
             if dimension_type == '1D':
+                path = f'{output_path}/{output_name}'
                 if not process_type == 'UPCA':
                     img = generate_barcode(gtin, process_type.lower())
                 else:
                     img = generate_barcode(gtin[:11], 'upca')
             else:
+                path = f'{output_path}/{output_name}{selected_format}'
                 if process_type == 'QR Code':
                     img = generate_qr_code(gtin)
                 else:
