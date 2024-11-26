@@ -271,7 +271,7 @@ class QREncoderWX(wx.Frame):
             return
 
         F_rate = self.F_rate.GetStringSelection()
-        img = generate_qr_code(input_, F_rate, encode_mode)
+        img = generate_qr_code(input_, F_rate)
 
         cv_img = pil_to_opencv_gray(img)
         cv2.imshow("Code", cv_img)
