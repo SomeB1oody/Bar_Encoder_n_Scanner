@@ -91,7 +91,7 @@ class GS1Encoder(wx.Frame):
 
         #选择格式
         self.type_choice = ['EAN13', 'UPCA','Code128']
-        self.process_type = wx.RadioBox(panel, label="Choose a type", choices=self.type_choice)
+        self.process_type = wx.ListBox(panel, choices=self.type_choice, style= wx.LB_SINGLE)
         self.vbox.Add(self.process_type, flag=wx.ALL, border=5)
 
         # 输入文本
@@ -144,6 +144,7 @@ class GS1Encoder(wx.Frame):
             self.type_choice = ['EAN13', 'UPCA','Code128']
         else:
             self.type_choice = ['QR Code', 'DataMatrix']
+        self.process_type.Set(self.type_choice)
 
     def on_select_folder(self, event):
         with wx.DirDialog(None, "Select a folder for output", "",
@@ -172,7 +173,7 @@ class GS1Encoder(wx.Frame):
 
             # 使用 BytesIO 将条形码保存到内存中
             buffer = BytesIO()
-            img.write(buffer)
+            img.save(buffer, format='PNG')
             # 使用 Pillow 显示条形码图像
             image = Image.open(buffer)
             image.show()
@@ -192,6 +193,9 @@ class GS1Encoder(wx.Frame):
         output_name = self.output_name.GetValue()
         selected_format = self.output_format.GetStringSelection()
 
+        if not process_type:
+            wx.MessageBox('choose a type for processing first', 'Error', wx.OK | wx.ICON_ERROR)
+            return
         if not output_path:
             wx.MessageBox('Output folder cannot be empty', 'Error', wx.OK | wx.ICON_ERROR)
             return
@@ -216,7 +220,7 @@ class GS1Encoder(wx.Frame):
 
             try:
                 img.save(path)
-                wx.MessageBox(f'Image saved to {path}', wx.OK | wx.ICON_INFORMATION)
+                wx.MessageBox(f'Image saved to {path}','Success', wx.OK | wx.ICON_INFORMATION)
             except Exception as e:
                 wx.MessageBox(str(e), 'Error', wx.OK | wx.ICON_ERROR)
                 return
