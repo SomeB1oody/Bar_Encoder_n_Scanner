@@ -99,15 +99,6 @@ class NumericLinearBarcodesEncoderWX(wx.Frame):
         self.hbox2.Add(self.output_path_text, flag=wx.ALL, border=5)
         self.vbox.Add(self.hbox2, flag=wx.EXPAND)
 
-        # 输出格式单选框
-        self.output_format = wx.RadioBox(
-            panel, label="Choose output format:", choices=[
-                '.jpg', '.jpeg', '.png', '.tiff',
-                '.tif', '.bmp', '.ppm', '.pgm', '.pbm', '.webp'
-            ]
-        )
-        self.vbox.Add(self.output_format, flag=wx.ALL, border=5)
-
         # 输出名称
         self.vbox.Add(wx.StaticText(panel, label=
         "Output image name:(no file suffix)"), flag=wx.ALL, border=5)
@@ -153,7 +144,6 @@ class NumericLinearBarcodesEncoderWX(wx.Frame):
         text_input = self.text_input.GetValue()
         output_path = self.selected_folder
         output_name = self.output_name.GetValue()
-        output_format = self.output_format.GetStringSelection()
 
         if not text_input:
             wx.MessageBox('Input cannot be empty', 'Error', wx.OK | wx.ICON_ERROR)
@@ -165,7 +155,7 @@ class NumericLinearBarcodesEncoderWX(wx.Frame):
 
         try:
             barcode_img = generate_numeric_barcodes(selected_type, text_input)
-            path = f"{output_path}/{output_name}{output_format}"
+            path = f"{output_path}/{output_name}"
             barcode_img.save(path)
             wx.MessageBox(f'Image saved at {path}', 'Success', wx.OK | wx.ICON_INFORMATION)
         except Exception as e:
@@ -176,6 +166,6 @@ if __name__ == "__main__":
     app = wx.App()
     frame = NumericLinearBarcodesEncoderWX(None)
     frame.SetTitle('Numeric Barcodes Encode with GUI')
-    frame.SetSize((700, 400))
+    frame.SetSize((700, 350))
     frame.Show()
     app.MainLoop()
