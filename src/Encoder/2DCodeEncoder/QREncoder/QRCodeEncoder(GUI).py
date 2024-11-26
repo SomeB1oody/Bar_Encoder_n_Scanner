@@ -1,10 +1,5 @@
-#Author: Stan Yin
-#GitHub Name: SomeB1oody
-#This project is based on CC 4.0 BY, please mention my name if you use it.
-#This project requires opencv, PIL, qrcode, numpy, re, base64 and wxWidgets.
 import wx
 import qrcode
-import base64
 from PIL import Image
 import numpy as np
 import re
@@ -14,10 +9,6 @@ def input_process(input_, encode_mode):
     match encode_mode:
         case 'utf-8':
             data = input_.encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
-        case 'base64':
-            with open(input_, "rb") as file:
-                encoded = base64.b64encode(file.read())
-                data = encoded.decode('utf-8')
         case 'iso-8859-1(Latin-1)':
             data = input_.encode('iso-8859-1', errors='ignore').decode('iso-8859-1', errors='ignore')
         case 'ascii':
@@ -112,27 +103,6 @@ class QREncoderWX(wx.Frame):
         panel = wx.Panel(self)
         self.vbox = wx.BoxSizer(wx.VERTICAL)
 
-        # 选择文件输入还是字符输入
-        self.text_or_file = wx.RadioBox(
-            panel, label="Choose input type", choices=[
-                'text', 'file(Max: 2,214 bytes)'
-            ]
-        )
-        self.Bind(wx.EVT_RADIOBOX, self.input_type, self.text_or_file)
-        self.vbox.Add(self.text_or_file, flag=wx.ALL, border=5)
-
-        # 输入路径
-        self.hbox = wx.BoxSizer(wx.HORIZONTAL)
-        self.file_button = wx.Button(panel, label="Select file")
-        self.Bind(wx.EVT_BUTTON, self.on_select_file, self.file_button)
-        self.hbox.Add(self.file_button,flag=wx.ALL, border=5)
-        self.input_path_text = wx.StaticText(panel, label=
-        "Click \"Select file\" first"
-        )
-        self.hbox.Add(self.input_path_text, flag=wx.ALL, border=5)
-        self.vbox.Add(self.hbox, flag=wx.EXPAND)
-        self.file_button.Enable(False)
-
         # 输入文本
         self.vbox.Add(wx.StaticText(panel, label=
         "Text input"), flag=wx.ALL, border=5)
@@ -143,7 +113,7 @@ class QREncoderWX(wx.Frame):
         # 编码格式单选框
         self.encode_mode = wx.RadioBox(
             panel, label="Choose encode mode:", choices=[
-                'utf-8', 'base64', 'iso-8859-1(Latin-1)', 'ascii', 'Shift JIS5 (Japanese)', 'GB2312', 'GBK', 'GB18030'
+                'utf-8', 'iso-8859-1(Latin-1)', 'ascii', 'Shift JIS5 (Japanese)', 'GB2312', 'GBK', 'GB18030'
             ],
             majorDimension=5,  # 每列5个选项
             style=wx.RA_SPECIFY_COLS  # 指定为按列排列
@@ -152,7 +122,7 @@ class QREncoderWX(wx.Frame):
 
         # 选择容错率
         self.F_rate_choice = ['Low(7%)', 'Medium(15%)', 'Quartile(25%)', 'High(30%)']
-        self.F_rate = wx.RadioBox(panel, label="Choose a fault tolerance rate", choices=self.F_rate_choice)
+        self.F_rate = wx.ListBox(panel, choices=self.F_rate_choice, style=wx.LB_SINGLE)
         self.vbox.Add(self.F_rate, flag=wx.ALL, border=5)
 
         # 生成按钮
@@ -207,40 +177,6 @@ class QREncoderWX(wx.Frame):
         panel.SetSizer(self.vbox)
         panel.Layout()
 
-    def input_type(self, event):
-        input_type = self.text_or_file.GetStringSelection()
-        if input_type == 'text':
-            self.file_button.Enable(False)
-            self.input_path_text.SetLabel("Select \"file\" to enable button")
-            self.text_input.Enable(True)
-            self.encode_mode.Enable(True)
-        else:
-            self.text_input.Enable(False)
-            self.file_button.Enable(True)
-            self.encode_mode.Enable(False)
-            self.encode_mode.SetSelection(1)
-
-    def on_select_file(self, event):
-        with wx.FileDialog(None, "Select a file", wildcard="所有文件 (*.*)|*.*",
-                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as dialog:
-            if dialog.ShowModal() == wx.ID_OK:
-                self.input_path_text.SetLabel(f"{dialog.GetPath()}")
-                self.selected_file = dialog.GetPath()
-                data_length = len(input_process(self.selected_file, self.encode_mode.GetStringSelection()))
-                if data_length > 2953:
-                    wx.MessageBox('Input data too big', 'Error', wx.OK | wx.ICON_ERROR)
-                    return
-
-            self.F_rate_choice = []
-            if data_length <= 2953:
-                self.F_rate_choice.append('Low(7%)')
-            if data_length <= 2231:
-                self.F_rate_choice.append('Medium(15%)')
-            if data_length <= 1663:
-                self.F_rate_choice.append('Quartile(25%)')
-            if data_length <= 1273:
-                self.F_rate_choice.append('High(30%)')
-
     def get_available_error_correction_options(self, event):
         data_length = len(input_process(self.text_input.GetValue(), self.encode_mode.GetStringSelection()))
         if data_length > 2953:
@@ -258,19 +194,19 @@ class QREncoderWX(wx.Frame):
             self.F_rate_choice.append('High(30%)')
 
     def on_generate_button(self, event):
-        input_type = self.text_or_file.GetStringSelection()
         encode_mode = self.encode_mode.GetStringSelection()
-        if input_type == 'text':
-            input_ = input_process(self.text_input.GetValue(), encode_mode)
-        else:
-            input_ = input_process(self.selected_file, encode_mode)
-
+        input_ = input_process(self.text_input.GetValue(), encode_mode)
 
         if not input_:
             wx.MessageBox('Input data cannot be empty', 'Error', wx.OK | wx.ICON_ERROR)
             return
 
         F_rate = self.F_rate.GetStringSelection()
+
+        if not F_rate:
+            wx.MessageBox('Choose error correction level first', 'Error', wx.OK | wx.ICON_ERROR)
+            return
+
         img = generate_qr_code(input_, F_rate)
 
         cv_img = pil_to_opencv_gray(img)
@@ -300,12 +236,8 @@ class QREncoderWX(wx.Frame):
                 self.selected_folder = dialog.GetPath()
 
     def on_save_button(self, event):
-        input_type = self.text_or_file.GetStringSelection()
         encode_mode = self.encode_mode.GetStringSelection()
-        if input_type == 'text':
-            input_ = input_process(self.text_input.GetValue(), encode_mode)
-        else:
-            input_ = input_process(self.selected_file, encode_mode)
+        input_ = input_process(self.text_input.GetValue(), encode_mode)
         size = self.img_size.GetValue()
         broader = self.broader_size.GetValue()
         output_path = self.selected_folder
@@ -353,6 +285,6 @@ if __name__ == "__main__":
     app = wx.App()
     frame = QREncoderWX(None)
     frame.SetTitle('QR Encoder with GUI')
-    frame.SetSize((750, 725))
+    frame.SetSize((750, 650))
     frame.Show()
     app.MainLoop()
