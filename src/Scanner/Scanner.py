@@ -1,16 +1,30 @@
-#Author: Stan Yin
-#GitHub Name: SomeB1oody
-#This project is based on CC 4.0 BY, please mention my name if you use it.
-#This project requires opencv, pyzbar, base64, re and wxWidgets.
 import cv2
 import wx
 import numpy as np
-import base64
 from pyzbar.pyzbar import decode
 import re
 
-def is_valid_extension(extension: str) -> bool:
-    return bool(re.match(r'^\.[a-zA-Z0-9]+$', extension))
+def is_valid_windows_filename(filename: str) -> bool:
+    # 检查是否包含非法字符
+    invalid_chars = r'[<>:"/\\|?*]'
+    if re.search(invalid_chars, filename):
+        return False
+    # 检查是否是保留名称
+    reserved_names = [
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+    ]
+    if filename.upper() in reserved_names:
+        return False
+    # 检查是否以空格或点结尾
+    if filename.endswith(' ') or filename.endswith('.'):
+        return False
+    # 检查文件名长度
+    if len(filename) > 255:
+        return False
+    # 如果所有检查都通过，返回 True
+    return True
 
 def correct_perspective(img, original_img):
     # 查找轮廓
@@ -158,12 +172,11 @@ class BarcodeScanner(wx.Frame):
         # 解码格式单选框
         self.decode_mode = wx.RadioBox(
             panel, label="Choose decode mode:", choices=[
-                'utf-8', 'base64', 'iso-8859-1(Latin-1)', 'ascii', 'Shift JIS5 (Japanese)', 'GB2312', 'GBK', 'GB18030'
+                'utf-8', 'iso-8859-1(Latin-1)', 'ascii', 'Shift JIS5 (Japanese)', 'GB2312', 'GBK', 'GB18030'
             ],
             majorDimension=2,  # 每列2个选项
             style=wx.RA_SPECIFY_COLS  # 指定为按列排列
         )
-        self.decode_mode.Bind(wx.EVT_RADIOBOX, self.mode_choice)
         self.vbox.Add(self.decode_mode, flag=wx.ALL, border=5)
         # 解码内容
         self.result_text = wx.StaticText(panel, label="Click \"Decode\" first to get QR text.")
@@ -188,16 +201,8 @@ class BarcodeScanner(wx.Frame):
         "Output name:(no file suffix)"), flag=wx.ALL, border=5)
         self.output_name = wx.TextCtrl(panel)
         self.vbox.Add(self.output_name, flag=wx.EXPAND | wx.ALL, border=5)
-        # 后缀输入
-        self.hbox3 = wx.BoxSizer(wx.HORIZONTAL)
-        self.hbox3.Add(wx.StaticText(panel, label="Suffix(Example: .png):"), flag=wx.ALL, border=5)
-        self.suffix = wx.TextCtrl(panel)
-        self.hbox3.Add(self.suffix, flag=wx.ALL, border=5)
-        self.vbox.Add(self.hbox3, flag=wx.ALL, border=5)
-        self.suffix.SetValue(".txt")
-        self.suffix.Enable(False)
         # 保存按钮
-        self.save_button = wx.Button(panel, label="Save")
+        self.save_button = wx.Button(panel, label="Save as txt file")
         self.save_button.Bind(wx.EVT_BUTTON, self.on_save_button)
         self.vbox.Add(self.save_button, flag=wx.ALL, border=5)
 
@@ -219,19 +224,10 @@ class BarcodeScanner(wx.Frame):
                 self.output_path_text.SetLabel(f"{dialog.GetPath()}")
                 self.selected_folder = dialog.GetPath()
 
-    def mode_choice(self, event):
-        mode = self.decode_mode.GetStringSelection()
-        if mode != 'base64':
-            self.suffix.SetValue(".txt")
-            self.suffix.Enable(False)
-        else:
-            self.suffix.Enable(True)
-
     def on_decode_button(self, event):
         decode_mode = self.decode_mode.GetStringSelection()
         match decode_mode:
             case 'utf-8': decode_mode = 'utf-8'
-            case 'base64': decode_mode = 'base64'
             case 'iso-8859-1(Latin-1)': decode_mode = 'iso-8859-1'
             case 'ascii': decode_mode = 'ascii'
             case 'Shift JIS5 (Japanese)': decode_mode = 'Shift JIS5'
@@ -257,10 +253,7 @@ class BarcodeScanner(wx.Frame):
             wx.MessageBox(f"{error_message}", "Error", wx.OK | wx.ICON_ERROR)
             return
 
-        if decode_mode != 'base64':
-            self.result_text.SetLabel(f"QR text is: {qr_text}")
-        else:
-            self.result_text.SetLabel("Barcode has decoded, but can't show text in base64. You can save it to see.")
+        self.result_text.SetLabel(f"QR text is: {qr_text}")
 
         if flag:
             BGR_or_GRAY = 'BGR'
@@ -283,24 +276,15 @@ class BarcodeScanner(wx.Frame):
             return
 
         output_name = self.output_name.GetValue()
-        if not output_name:
+        if not is_valid_windows_filename(output_name):
             wx.MessageBox('Output name cannot be empty', 'Error', wx.OK | wx.ICON_ERROR)
             return
 
-        suffix = self.suffix.GetValue()
-        if not suffix:
-            wx.MessageBox('Suffix cannot be empty', 'Error', wx.OK | wx.ICON_ERROR)
-            return
-        if is_valid_extension(suffix):
-            wx.MessageBox("Invalid suffix input", "Error", wx.OK | wx.ICON_ERROR)
-            return
-
-        path_out = f'{output_path}/{output_name}{suffix}'
+        path_out = f'{output_path}/{output_name}.txt'
 
         decode_mode = self.decode_mode.GetStringSelection()
         match decode_mode:
             case 'utf-8': decode_mode = 'utf-8'
-            case 'base64': decode_mode = 'base64'
             case 'iso-8859-1(Latin-1)': decode_mode = 'iso-8859-1'
             case 'ascii': decode_mode = 'ascii'
             case 'Shift JIS5 (Japanese)': decode_mode = 'Shift JIS5'
@@ -326,10 +310,7 @@ class BarcodeScanner(wx.Frame):
             wx.MessageBox(f"{error_message}", "Error", wx.OK | wx.ICON_ERROR)
             return
 
-        if decode_mode != 'base64':
-            self.result_text.SetLabel(f"QR text is: {qr_text}")
-        else:
-            self.result_text.SetLabel("Barcode has decoded, but can't show text in base64. You can save it to see.")
+        self.result_text.SetLabel(f"QR text is: {qr_text}")
 
         if flag:
             BGR_or_GRAY = 'BGR'
@@ -344,26 +325,13 @@ class BarcodeScanner(wx.Frame):
             wx.MessageBox(f"Fail to show image on GUI: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
             return
 
-        if suffix != 'base64':
-            try:
-                with open(path_out,'w', encoding=decode_mode) as file:
-                    file.write(qr_text)
-                wx.MessageBox(f'Text has been saved to {path_out}'
-                , 'Success', wx.OK | wx.ICON_INFORMATION)
-            except Exception as e:
-                wx.MessageBox(str(e), "Error", wx.OK | wx.ICON_ERROR)
-                return
-        else:
-            try:
-                base64_data = qr_text.data.decode('utf-8')
-                file_data = base64.b64decode(base64_data)
-                with open(path_out, 'wb') as file:
-                    file.write(file_data)
-                wx.MessageBox(f'Text has been saved to {path_out}'
-                , 'Success', wx.OK | wx.ICON_INFORMATION)
-            except Exception as e:
-                wx.MessageBox(str(e), "Error", wx.OK | wx.ICON_ERROR)
-                return
+        try:
+            with open(path_out,'w', encoding=decode_mode) as file:
+                file.write(qr_text)
+            wx.MessageBox(f'Text has been saved to {path_out}', 'Success', wx.OK | wx.ICON_INFORMATION)
+        except Exception as e:
+            wx.MessageBox(str(e), "Error", wx.OK | wx.ICON_ERROR)
+            return
 
 if __name__ == "__main__":
     app = wx.App()
