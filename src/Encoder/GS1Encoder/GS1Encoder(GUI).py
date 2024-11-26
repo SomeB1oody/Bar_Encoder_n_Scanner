@@ -50,7 +50,16 @@ def generate_barcode(gtin, barcode_format):
     # 根据选择生成一维条形码并保存为PNG文件。
     barcode_class = barcode.get_barcode_class(barcode_format)
     barcode_obj = barcode_class(gtin, writer=ImageWriter())
-    return barcode_obj
+
+    # 使用 BytesIO 将条形码保存在内存中
+    buffer = BytesIO()
+    barcode_obj.write(buffer)  # 将图像写入内存
+    buffer.seek(0)  # 将内存指针移动到开头
+
+    # 使用 Pillow 打开图像
+    img = Image.open(buffer)
+
+    return img
 
 def generate_qr_code(data):
     # 生成QR码并保存为PNG文件。
@@ -121,8 +130,6 @@ class GS1Encoder(wx.Frame):
                 '.tif', '.bmp', '.ppm', '.pgm', '.pbm', '.webp'
             ]
         )
-        self.output_format.Enable(False)
-        self.output_format.SetSelection(2)
         self.vbox.Add(self.output_format, flag=wx.ALL, border=5)
 
         # 输出名称
@@ -144,10 +151,8 @@ class GS1Encoder(wx.Frame):
         selected_dimension = self.dimension.GetStringSelection()
         if selected_dimension == '1D':
             self.type_choice = ['EAN13', 'UPCA','Code128']
-            self.output_format.Enable(False)
         else:
             self.type_choice = ['QR Code', 'DataMatrix']
-            self.output_format.Enable(True)
         self.process_type.Set(self.type_choice)
 
     def on_select_folder(self, event):
@@ -175,19 +180,14 @@ class GS1Encoder(wx.Frame):
                 else:
                     img = generate_data_matrix(gtin)
 
-            # 使用 BytesIO 将条形码保存到内存中
-            buffer = BytesIO()
-            img.save(buffer, format='PNG')
-            # 使用 Pillow 显示条形码图像
-            image = Image.open(buffer)
-            image.show()
+            # 显示生成的图像
+            img.show()
 
         else:
             wx.MessageBox(
-            'Input is invalid. Please enter a 12-digit number to generate',
-                'Error',wx.OK | wx.ICON_ERROR
+                'Input is invalid. Please enter a 12-digit number to generate',
+                'Error', wx.OK | wx.ICON_ERROR
             )
-            return
 
     def on_save_button(self, event):
         dimension_type = self.dimension.GetStringSelection()
@@ -207,16 +207,16 @@ class GS1Encoder(wx.Frame):
             wx.MessageBox('Output name is invalid', 'Error', wx.OK | wx.ICON_ERROR)
             return
 
+        path = f'{output_path}/{output_name}{selected_format}'
+
         if len(input_text) == 12 and input_text.isdigit():
             gtin = generate_gtin(input_text)
             if dimension_type == '1D':
-                path = f'{output_path}/{output_name}'
                 if not process_type == 'UPCA':
                     img = generate_barcode(gtin, process_type.lower())
                 else:
                     img = generate_barcode(gtin[:11], 'upca')
             else:
-                path = f'{output_path}/{output_name}{selected_format}'
                 if process_type == 'QR Code':
                     img = generate_qr_code(gtin)
                 else:
