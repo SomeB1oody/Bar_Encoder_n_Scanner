@@ -126,7 +126,7 @@ git push orgin feature-name
 ---
 ## 6. License
 
-This project uses [MIT LICENSE](LICENSE).
+This project uses [MIT LICENSE]([LICENSE](https://github.com/SomeB1oody/BarcodeMaster/blob/main/LICENSE.md)).
 
 ---
 ## 7. Contact information
