@@ -167,10 +167,11 @@ class NumericLinearBarcodesEncoderWX(wx.Frame):
             barcode_img = generate_numeric_barcodes(selected_type, text_input)
             path = f"{output_path}/{output_name}{output_format}"
             barcode_img.save(path)
+            
         except Exception as e:
             wx.MessageBox(str(e), 'Error', wx.OK | wx.ICON_ERROR)
             return
-
+            wx.MessageBox(f'Image saved at {path}', 'Success', wx.OK | wx.ICON_INFORMATION)
 if __name__ == "__main__":
     app = wx.App()
     frame = NumericLinearBarcodesEncoderWX(None)
