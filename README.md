@@ -131,6 +131,5 @@ This project uses [MIT LICENSE](https://github.com/SomeB1oody/BarcodeMaster/blob
 ---
 ## 7. Contact information
 
-- Author: Stan Yin
 - Email: stanyin64@gmail.com
 - GitHub: [@SomeB1ooody](https://github.com/SomeB1oody)
